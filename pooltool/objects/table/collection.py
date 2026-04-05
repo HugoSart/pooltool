@@ -96,6 +96,7 @@ _default_table_type_map: dict[TableType, TableName] = {
 _default_game_type_map: dict[GameType, TableName] = {
     GameType.EIGHTBALL: TableName.SEVEN_FOOT_SHOWOOD,
     GameType.NINEBALL: TableName.SEVEN_FOOT_SHOWOOD,
+    GameType.SINUQUINHA: TableName.SEVEN_FOOT_SHOWOOD,
     GameType.SNOOKER: TableName.SNOOKER_GENERIC,
     GameType.THREECUSHION: TableName.BILLIARD_WIP,
     GameType.SUMTOTHREE: TableName.SUMTOTHREE_WIP,

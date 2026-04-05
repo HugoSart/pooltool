@@ -21,6 +21,12 @@ DEFAULT_THREECUSH_BALLSET = get_ballset("billiard")
 DEFAULT_SUMTOTHREE_BALLSET = None
 
 
+def _scaled_ball_mass(radius: float) -> float:
+    reference_radius = 0.028575
+    reference_mass = 0.170097
+    return reference_mass * (radius / reference_radius) ** 3
+
+
 class Dir(StrEnum):
     """Movement directions
 
@@ -366,7 +372,35 @@ def _get_eight_ball_rack(
     cue = BallPos([], (0.6, 0.23), {"cue"})
     blueprint += [cue]
 
-    return generate_layout(blueprint, table, ballset=ballset, **kwargs)
+    return generate_layout(
+        blueprint, table, ballset=ballset, ball_params=ball_params, **kwargs
+    )
+
+
+def _get_sinuquinha_rack(
+    table: Table,
+    ballset: BallSet | None = None,
+    ball_params: BallParams | None = None,
+    **kwargs,
+) -> dict[str, Ball]:
+    if ball_params is None:
+        ball_params = BallParams.default(game_type=GameType.SINUQUINHA)
+
+    rack = _get_eight_ball_rack(
+        table=table,
+        ballset=ballset,
+        ball_params=ball_params,
+        **kwargs,
+    )
+
+    cue_radius = 0.054 / 2
+    rack["cue"].params = attrs.evolve(
+        rack["cue"].params,
+        R=cue_radius,
+        m=_scaled_ball_mass(cue_radius),
+    )
+    rack["cue"].state.rvw[0][2] = cue_radius
+    return rack
 
 
 def _get_three_cushion_rack(
@@ -498,6 +532,7 @@ class GetRackProtocol(Protocol):
 _game_rack_map: dict[str, GetRackProtocol] = {
     GameType.NINEBALL: _get_nine_ball_rack,
     GameType.EIGHTBALL: _get_eight_ball_rack,
+    GameType.SINUQUINHA: _get_sinuquinha_rack,
     GameType.THREECUSHION: _get_three_cushion_rack,
     GameType.SNOOKER: _get_snooker_rack,
     GameType.SUMTOTHREE: _get_sum_to_three_rack,

@@ -144,11 +144,13 @@ class PrebuiltBallParams(StrEnum):
 
     Attributes:
         POOL_GENERIC:
+        SINUQUINHA_GENERIC:
         SNOOKER_GENERIC:
         BILLIARD_GENERIC:
     """
 
     POOL_GENERIC = auto()
+    SINUQUINHA_GENERIC = auto()
     SNOOKER_GENERIC = auto()
     BILLIARD_GENERIC = auto()
 
@@ -160,6 +162,16 @@ BALL_PARAMS: dict[PrebuiltBallParams, BallParams] = {
     PrebuiltBallParams.POOL_GENERIC: BallParams(
         m=0.170097,
         R=0.028575,
+        u_s=0.2,
+        u_r=0.01,
+        u_sp_proportionality=10 * 2 / 5 / 9,
+        e_c=0.85,
+        f_c=0.2,
+        g=9.81,
+    ),
+    PrebuiltBallParams.SINUQUINHA_GENERIC: BallParams(
+        m=0.170097 * (0.025 / 0.028575) ** 3,
+        R=0.025,
         u_s=0.2,
         u_r=0.01,
         u_sp_proportionality=10 * 2 / 5 / 9,
@@ -193,6 +205,7 @@ BALL_PARAMS: dict[PrebuiltBallParams, BallParams] = {
 _default_map: dict[GameType, PrebuiltBallParams] = {
     GameType.EIGHTBALL: PrebuiltBallParams.POOL_GENERIC,
     GameType.NINEBALL: PrebuiltBallParams.POOL_GENERIC,
+    GameType.SINUQUINHA: PrebuiltBallParams.SINUQUINHA_GENERIC,
     GameType.THREECUSHION: PrebuiltBallParams.BILLIARD_GENERIC,
     GameType.SNOOKER: PrebuiltBallParams.SNOOKER_GENERIC,
     GameType.SUMTOTHREE: PrebuiltBallParams.BILLIARD_GENERIC,

@@ -7,6 +7,7 @@ class GameType(StrEnum):
     Attributes:
         EIGHTBALL:
         NINEBALL:
+        SINUQUINHA:
         THREECUSHION:
         SNOOKER:
         SUMTOTHREE:
@@ -14,6 +15,7 @@ class GameType(StrEnum):
 
     EIGHTBALL = "Eight Ball"
     NINEBALL = "Nine Ball"
+    SINUQUINHA = "Sinuquinha"
     THREECUSHION = "Three Cushion"
     SNOOKER = "Snooker"
     SUMTOTHREE = "Sum to Three"

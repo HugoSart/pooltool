@@ -13,6 +13,7 @@ from pooltool.ruleset.eight_ball import _EightBall
 from pooltool.ruleset.nine_ball import _NineBall
 from pooltool.ruleset.sandbox import _RulelessMode
 from pooltool.ruleset.snooker import _Snooker
+from pooltool.ruleset.sinuquinha import _Sinuquinha
 from pooltool.ruleset.sum_to_three import _SumToThree
 from pooltool.ruleset.three_cushion import _ThreeCushion
 from pooltool.ruleset.utils import (
@@ -36,6 +37,7 @@ from pooltool.ruleset.utils import (
 _ruleset_classes = {
     GameType.NINEBALL: _NineBall,
     GameType.EIGHTBALL: _EightBall,
+    GameType.SINUQUINHA: _Sinuquinha,
     GameType.THREECUSHION: _ThreeCushion,
     GameType.SNOOKER: _Snooker,
     GameType.SUMTOTHREE: _SumToThree,
