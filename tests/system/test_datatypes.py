@@ -17,11 +17,17 @@ def test_cue_ball_id_mismatch():
         )
 
 
-def test_system_raises_on_unequal_radii():
-    b1 = Ball.create("1", R=1.0)
-    b2 = Ball.create("2", R=1.5)
+def test_system_accepts_unequal_radii():
+    cue_ball = Ball.create("cue", R=1.0)
+    object_ball = Ball.create("1", R=1.5)
 
     template = System.example()
 
-    with pytest.raises(AssertionError, match="different radius"):
-        System(balls={"1": b1, "2": b2}, cue=template.cue, table=template.table)
+    system = System(
+        balls={"cue": cue_ball, "1": object_ball},
+        cue=template.cue,
+        table=template.table,
+    )
+
+    assert system.balls["cue"].params.R == 1.0
+    assert system.balls["1"].params.R == 1.5

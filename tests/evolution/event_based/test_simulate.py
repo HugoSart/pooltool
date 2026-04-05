@@ -162,7 +162,8 @@ def test_case3():
         m2=ball2.params.m,
         g1=ball1.params.g,
         g2=ball2.params.g,
-        R=ball1.params.R,
+        R1=ball1.params.R,
+        R2=ball2.params.R,
     )
 
     assert event.time == expected
@@ -301,7 +302,8 @@ def test_grazing_ball_ball_collision():
             m2=ball2.params.m,
             g1=ball1.params.g,
             g2=ball2.params.g,
-            R=ball1.params.R,
+            R1=ball1.params.R,
+            R2=ball2.params.R,
         )
 
         if phi < 90:
@@ -398,7 +400,8 @@ def test_almost_touching_ball_ball_collision():
             m2=ball2.params.m,
             g1=ball1.params.g,
             g2=ball2.params.g,
-            R=ball1.params.R,
+            R1=ball1.params.R,
+            R2=ball2.params.R,
         )
 
         diff = abs(calculated - truth)

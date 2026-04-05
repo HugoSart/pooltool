@@ -437,7 +437,8 @@ def get_next_ball_ball_collision(
                 m2=ball2_params.m,
                 g1=ball1_params.g,
                 g2=ball2_params.g,
-                R=ball1_params.R,
+                R1=ball1_params.R,
+                R2=ball2_params.R,
             )
             cache[ball_pair] = shot.t + dtau_E
 

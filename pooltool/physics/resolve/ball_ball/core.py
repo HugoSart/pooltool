@@ -38,9 +38,10 @@ class CoreBallBallCollision(ABC):
         """Apply fallback positioning by moving balls along line of centers.
 
         This fallback strategy moves balls uniformly along the line of centers until
-        they're separated by the target distance (2*R + spacer).
+        they're separated by the target distance (R1 + R2 + spacer).
         """
-        correction = 2 * ball1.params.R - ptmath.norm3d(r2 - r1) + spacer
+        target_separation = ball1.params.R + ball2.params.R + spacer
+        correction = target_separation - ptmath.norm3d(r2 - r1)
         r1_corrected = r1 - correction / 2 * ptmath.unit_vector(r2 - r1)
         r2_corrected = r2 + correction / 2 * ptmath.unit_vector(r2 - r1)
         return r1_corrected, r2_corrected
@@ -48,10 +49,10 @@ class CoreBallBallCollision(ABC):
     def make_kiss(self, ball1: Ball, ball2: Ball) -> tuple[Ball, Ball]:
         """Position balls at precise target separation before collision resolution.
 
-        This method adjusts ball positions so they are separated by exactly 2*R +
-        spacer, where R is the ball radius and ``spacer`` is a small epsilon to prevent
-        ball intersection that occurs due to floating-point precision if an explicit
-        spacer is not added.
+        This method adjusts ball positions so they are separated by exactly R1 + R2 +
+        spacer, where R1 and R2 are the ball radii and ``spacer`` is a small epsilon
+        to prevent ball intersection that occurs due to floating-point precision if an
+        explicit spacer is not added.
 
         The primary method solves a quadratic equation to find the time offset that
         positions the balls at the target separation. Balls are moved along their
@@ -102,25 +103,31 @@ class CoreBallBallCollision(ABC):
                 Cx * Cx
                 + Cy * Cy
                 + Cz * Cz
-                - (2 * ball1.params.R + spacer) * (2 * ball1.params.R + spacer)
+                - (ball1.params.R + ball2.params.R + spacer)
+                * (ball1.params.R + ball2.params.R + spacer)
             )
             roots_complex = ptmath.roots.quadratic.solve_complex(alpha, beta, gamma)
 
             imag_mag = np.abs(roots_complex.imag)
             real_mag = np.abs(roots_complex.real)
-            keep = (imag_mag / real_mag) < 1e-3
+            keep = (real_mag > const.EPS) & ((imag_mag / real_mag) < 1e-3)
             roots = roots_complex[keep].real
-            t = roots[np.abs(roots).argmin()]
-
-            r1_corrected = r1 + t * v1
-            r2_corrected = r2 + t * v2
-
-            midpoint = (r1 + r2) / 2
-            midpoint_corrected = (r1_corrected + r2_corrected) / 2
-            if ptmath.norm3d(midpoint - midpoint_corrected) > 5 * spacer:
+            if len(roots) == 0:
                 r1_corrected, r2_corrected = self._apply_fallback_positioning(
                     ball1, ball2, r1, r2, spacer
                 )
+            else:
+                t = roots[np.abs(roots).argmin()]
+
+                r1_corrected = r1 + t * v1
+                r2_corrected = r2 + t * v2
+
+                midpoint = (r1 + r2) / 2
+                midpoint_corrected = (r1_corrected + r2_corrected) / 2
+                if ptmath.norm3d(midpoint - midpoint_corrected) > 5 * spacer:
+                    r1_corrected, r2_corrected = self._apply_fallback_positioning(
+                        ball1, ball2, r1, r2, spacer
+                    )
 
         ball1.state.rvw[0] = r1_corrected
         ball2.state.rvw[0] = r2_corrected
@@ -198,26 +205,29 @@ class CoreBallBallCollision(ABC):
             if v1_loc > v2_loc:
                 chaser_loc_vel = v1_loc
                 ball1_is_chaser = True
+                m_chaser = ball1.params.m
             else:
                 chaser_loc_vel = v2_loc
                 ball1_is_chaser = False
+                m_chaser = ball2.params.m
 
             # Chased ball steals fraction of chaser's line of centers momentum
-            # FIXME: We assume equal mass, so transfer velocity directly
-            stolen_loc_velocity = chaser_loc_vel * theft_fraction
+            stolen_momentum = m_chaser * chaser_loc_vel * theft_fraction
 
             if ball1_is_chaser:
-                v1_loc_new = v1_loc - stolen_loc_velocity
-                v2_loc_new = v2_loc + stolen_loc_velocity
+                v1_loc_new = v1_loc - stolen_momentum / ball1.params.m
+                v2_loc_new = v2_loc + stolen_momentum / ball2.params.m
             else:
-                v1_loc_new = v1_loc + stolen_loc_velocity
-                v2_loc_new = v2_loc - stolen_loc_velocity
+                v1_loc_new = v1_loc + stolen_momentum / ball1.params.m
+                v2_loc_new = v2_loc - stolen_momentum / ball2.params.m
 
             v1_corrected = v1 - v1_loc * line_of_centers + v1_loc_new * line_of_centers
             v2_corrected = v2 - v2_loc * line_of_centers + v2_loc_new * line_of_centers
 
-            momentum_before = v1 + v2
-            momentum_after = v1_corrected + v2_corrected
+            momentum_before = ball1.params.m * v1 + ball2.params.m * v2
+            momentum_after = (
+                ball1.params.m * v1_corrected + ball2.params.m * v2_corrected
+            )
             assert np.allclose(momentum_before, momentum_after, rtol=1e-10)
 
             ball1.state.rvw[1] = v1_corrected

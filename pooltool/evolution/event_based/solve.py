@@ -106,7 +106,8 @@ def ball_ball_collision_coeffs(
     m2: float,
     g1: float,
     g2: float,
-    R: float,
+    R1: float,
+    R2: float,
 ) -> tuple[float, float, float, float, float]:
     """Get quartic coeffs required to determine the ball-ball collision time
 
@@ -122,7 +123,7 @@ def ball_ball_collision_coeffs(
         phi1 = ptmath.angle(rvw1[1])
         v1 = ptmath.norm3d(rvw1[1])
 
-        u1 = get_u(rvw1, R, phi1, s1)
+        u1 = get_u(rvw1, R1, phi1, s1)
 
         K1 = -0.5 * mu1 * g1
         cos_phi1 = np.cos(phi1)
@@ -139,7 +140,7 @@ def ball_ball_collision_coeffs(
         phi2 = ptmath.angle(rvw2[1])
         v2 = ptmath.norm3d(rvw2[1])
 
-        u2 = get_u(rvw2, R, phi2, s2)
+        u2 = get_u(rvw2, R2, phi2, s2)
 
         K2 = -0.5 * mu2 * g2
         cos_phi2 = np.cos(phi2)
@@ -158,7 +159,7 @@ def ball_ball_collision_coeffs(
     b = 2 * Ax * Bx + 2 * Ay * By
     c = Bx * Bx + 2 * Ax * Cx + 2 * Ay * Cy + By * By
     d = 2 * Bx * Cx + 2 * By * Cy
-    e = Cx * Cx + Cy * Cy - 4 * R * R
+    e = Cx * Cx + Cy * Cy - (R1 + R2) * (R1 + R2)
 
     return a, b, c, d, e
 
@@ -175,7 +176,8 @@ def ball_ball_collision_time(
     m2: float,
     g1: float,
     g2: float,
-    R: float,
+    R1: float,
+    R2: float,
 ) -> float:
     """Get the time until collision between 2 balls."""
     return get_real_positive_smallest_root(
@@ -191,7 +193,8 @@ def ball_ball_collision_time(
                 m2,
                 g1,
                 g2,
-                R,
+                R1,
+                R2,
             )
         )
     )

@@ -229,7 +229,7 @@ def ball_ids_occluding_ballpath(
             continue
 
         distance = norm2d(closest - p0)
-        if distance < 2 * _ball.params.R:
+        if distance < ball.params.R + _ball.params.R:
             occluding_ball_ids.add(_ball.id)
 
     return occluding_ball_ids
@@ -239,7 +239,7 @@ def is_object_ball_occluded(
     cue: Ball, ball: Ball, table: Table, pocket: Pocket, balls: Iterable[Ball]
 ) -> bool:
     """Is the cue's path to the object ball occluded?"""
-    aim_spot = calc_shadow_ball_center(ball, table, pocket)
+    aim_spot = calc_shadow_ball_center(ball, table, pocket, cue.params.R)
 
     occluding_ids = ball_ids_occluding_ballpath(cue, aim_spot, balls)
     occluding_ids.discard(cue.id)
@@ -261,16 +261,20 @@ def is_pocket_occluded(
 
 
 def is_room_for_cue_ball(
-    ball: Ball, table: Table, pocket: Pocket, balls: Iterable[Ball]
+    ball: Ball,
+    table: Table,
+    pocket: Pocket,
+    balls: Iterable[Ball],
+    cue_ball_radius: float | None = None,
 ) -> bool:
-    R = ball.params.R
-    shadow_ball_coords = calc_shadow_ball_center(ball, table, pocket)
+    cue_ball_radius = ball.params.R if cue_ball_radius is None else cue_ball_radius
+    shadow_ball_coords = calc_shadow_ball_center(ball, table, pocket, cue_ball_radius)
 
     if (
-        shadow_ball_coords[0] < R
-        or shadow_ball_coords[0] > table.w - R
-        or shadow_ball_coords[1] < R
-        or shadow_ball_coords[1] > table.l - R
+        shadow_ball_coords[0] < cue_ball_radius
+        or shadow_ball_coords[0] > table.w - cue_ball_radius
+        or shadow_ball_coords[1] < cue_ball_radius
+        or shadow_ball_coords[1] > table.l - cue_ball_radius
     ):
         return False
 
@@ -278,7 +282,7 @@ def is_room_for_cue_ball(
         if ball.id == _ball.id:
             continue
 
-        if norm2d(_ball.xyz[:2] - shadow_ball_coords) < 2 * _ball.params.R:
+        if norm2d(_ball.xyz[:2] - shadow_ball_coords) < cue_ball_radius + _ball.params.R:
             return False
 
     return True
@@ -431,7 +435,7 @@ def viable_pockets(
 
         if (
             not is_pocket_occluded(ball, table, pocket, balls)
-            and is_room_for_cue_ball(ball, table, pocket, balls)
+            and is_room_for_cue_ball(ball, table, pocket, balls, cue.params.R)
             and not is_jaw_in_way(ball, table, pocket)
             and not is_object_ball_occluded(cue, ball, table, pocket, balls)
             and cut_angle <= max_cut
@@ -443,7 +447,12 @@ def viable_pockets(
     return sorted(viable, key=lambda x: x[1])
 
 
-def calc_shadow_ball_center(ball: Ball, table: Table, pocket: Pocket) -> Coordinate:
+def calc_shadow_ball_center(
+    ball: Ball,
+    table: Table,
+    pocket: Pocket,
+    cue_ball_radius: float | None = None,
+) -> Coordinate:
     """Return coordinates of shadow ball for potting into specific pocket"""
 
     potting_point = get_potting_point(ball, table, pocket)
@@ -451,8 +460,12 @@ def calc_shadow_ball_center(ball: Ball, table: Table, pocket: Pocket) -> Coordin
     # Calculate the unit vector drawn from the object ball to the pocket
     ball_to_pocket_vector = unit_vector_slow(potting_point - ball.xyz[:2])
 
-    # The shadow ball center is two ball radii away from the object ball center
-    magnitude = ball.params.R * 2
+    if cue_ball_radius is None:
+        cue_ball_radius = ball.params.R
+
+    # The shadow ball center is one cue-ball radius plus one object-ball radius away
+    # from the object ball center.
+    magnitude = ball.params.R + cue_ball_radius
 
     # In the direction opposite the ball to pocket vector
     return ball.xyz[:2] - ball_to_pocket_vector * magnitude
@@ -463,7 +476,7 @@ def calc_potting_angle(
 ) -> float:
     """Return potting angle phi for potting into pocket"""
     p1 = cueball.xyz[:2]
-    p2 = calc_shadow_ball_center(ball, table, pocket)
+    p2 = calc_shadow_ball_center(ball, table, pocket, cueball.params.R)
 
     (x1, y1), (x2, y2) = p1, p2
     x_diff, y_diff = x2 - x1, y2 - y1

@@ -8,20 +8,19 @@ from pooltool.physics.resolve.ball_ball.core import CoreBallBallCollision
 from pooltool.physics.resolve.models import BallBallModel
 
 
-def _resolve_ball_ball(rvw1, rvw2, R):
+def _resolve_ball_ball(rvw1, rvw2, m1, m2):
     r1, r2 = rvw1[0], rvw2[0]
     v1, v2 = rvw1[1], rvw2[1]
 
     n = ptmath.unit_vector(r2 - r1)
-    t = ptmath.coordinate_rotation(n, np.pi / 2)
+    rel_normal_speed = float(np.dot(v1 - v2, n))
 
-    v_rel = v1 - v2
-    v_mag = ptmath.norm3d(v_rel)
+    if rel_normal_speed <= 0:
+        return rvw1, rvw2
 
-    beta = ptmath.angle(v_rel, n)
-
-    rvw1[1] = t * v_mag * np.sin(beta) + v2
-    rvw2[1] = n * v_mag * np.cos(beta) + v2
+    impulse = 2.0 * rel_normal_speed / (1.0 / m1 + 1.0 / m2)
+    rvw1[1] = v1 - impulse / m1 * n
+    rvw2[1] = v2 + impulse / m2 * n
 
     return rvw1, rvw2
 
@@ -46,7 +45,8 @@ class FrictionlessElastic(CoreBallBallCollision):
         rvw1, rvw2 = _resolve_ball_ball(
             ball1.state.rvw.copy(),
             ball2.state.rvw.copy(),
-            ball1.params.R,
+            ball1.params.m,
+            ball2.params.m,
         )
 
         ball1.state = BallState(rvw1, const.sliding)

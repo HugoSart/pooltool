@@ -48,7 +48,20 @@ def test_collide_balls(initial_conditions, expected):
     w_j = np.zeros(3, dtype=np.float64)
     # calc immediate post-collision state
     v_i1, w_i1, v_j1, w_j1 = _collide_balls(
-        r_i, v_i, w_i, r_j, v_j, w_j, R=R, M=M, u_s1=mu_s, u_s2=mu_s, u_b=mu_b, e_b=e_b
+        r_i,
+        v_i,
+        w_i,
+        r_j,
+        v_j,
+        w_j,
+        R1=R,
+        R2=R,
+        M1=M,
+        M2=M,
+        u_s1=mu_s,
+        u_s2=mu_s,
+        u_b=mu_b,
+        e_b=e_b,
     )
 
     v_iS_mag_ex, v_jS_mag_ex, theta_i_ex, theta_j_ex = expected

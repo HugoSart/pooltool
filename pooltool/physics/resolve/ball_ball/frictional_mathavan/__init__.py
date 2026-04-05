@@ -20,8 +20,10 @@ Z_LOC = array([0, 0, 1], dtype=np.float64)
 def collide_balls(
     rvw1: NDArray[np.float64],
     rvw2: NDArray[np.float64],
-    R: float,
-    M: float,
+    R1: float,
+    R2: float,
+    M1: float,
+    M2: float,
     u_s1: float = 0.21,
     u_s2: float = 0.21,
     u_b: float = 0.05,
@@ -60,7 +62,22 @@ def collide_balls(
     r_j, v_j, w_j = rvw2.copy()
 
     v_i1, w_i1, v_j1, w_j1 = _collide_balls(
-        r_i, v_i, w_i, r_j, v_j, w_j, R, M, u_s1, u_s2, u_b, e_b, deltaP, N
+        r_i,
+        v_i,
+        w_i,
+        r_j,
+        v_j,
+        w_j,
+        R1,
+        R2,
+        M1,
+        M2,
+        u_s1,
+        u_s2,
+        u_b,
+        e_b,
+        deltaP,
+        N,
     )
 
     rvw1[1, :2] = v_i1[:2]
@@ -78,8 +95,10 @@ def _collide_balls(
     r_j: NDArray[np.float64],
     v_j: NDArray[np.float64],
     w_j: NDArray[np.float64],
-    R: float,
-    M: float,
+    R1: float,
+    R2: float,
+    M1: float,
+    M2: float,
     u_s1: float = 0.21,
     u_s2: float = 0.21,
     u_b: float = 0.05,
@@ -113,18 +132,20 @@ def _collide_balls(
     v_jx, v_jy = dot(v_j, x_loc), dot(v_j, y_loc)
     w_ix, w_iy, w_iz = dot(G, w_i)
     w_jx, w_jy, w_jz = dot(G, w_j)
-    u_iR_x, u_iR_y = v_ix + R * w_iy, v_iy - R * w_ix
-    u_jR_x, u_jR_y = v_jx + R * w_jy, v_jy - R * w_jx
+    u_iR_x, u_iR_y = v_ix + R1 * w_iy, v_iy - R1 * w_ix
+    u_jR_x, u_jR_y = v_jx + R2 * w_jy, v_jy - R2 * w_jx
     u_iR_xy_mag = sqrt(u_iR_x**2 + u_iR_y**2)
     u_jR_xy_mag = sqrt(u_jR_x**2 + u_jR_y**2)
-    u_ijC_x = v_ix - v_jx - R * (w_iz + w_jz)
-    u_ijC_z = R * (w_ix + w_jx)
+    u_ijC_x = v_ix - v_jx - R1 * w_iz - R2 * w_jz
+    u_ijC_z = R1 * w_ix + R2 * w_jx
     u_ijC_xz_mag = sqrt(u_ijC_x**2 + u_ijC_z**2)
     v_ijy = v_jy - v_iy
     if deltaP is None:
-        deltaP = 0.5 * (1 + e_b) * M * abs(v_ijy) / N
+        reduced_mass = 1.0 / (1.0 / M1 + 1.0 / M2)
+        deltaP = (1 + e_b) * reduced_mass * abs(v_ijy) / N
     assert deltaP is not None
-    C = 5 / (2 * M * R)
+    C_i = 5 / (2 * M1 * R1)
+    C_j = 5 / (2 * M2 * R2)
     W_f = INF
     W_c = None
     W = 0
@@ -156,15 +177,15 @@ def _collide_balls(
                         deltaP_ix = u_s1 * (u_iR_x / u_iR_xy_mag) * deltaP_2
                         deltaP_iy = u_s1 * (u_iR_y / u_iR_xy_mag) * deltaP_2
         # calc velocity changes:
-        deltaV_ix = (deltaP_1 + deltaP_ix) / M
-        deltaV_iy = (-deltaP + deltaP_iy) / M
-        deltaV_jx = (-deltaP_1 + deltaP_jx) / M
-        deltaV_jy = (deltaP + deltaP_jy) / M
+        deltaV_ix = (deltaP_1 + deltaP_ix) / M1
+        deltaV_iy = (-deltaP + deltaP_iy) / M1
+        deltaV_jx = (-deltaP_1 + deltaP_jx) / M2
+        deltaV_jy = (deltaP + deltaP_jy) / M2
         # calc angular velocity changes:
-        deltaOm_ix = C * (deltaP_2 + deltaP_iy)
-        deltaOm_iy = C * (-deltaP_ix)
-        deltaOm_iz = C * (-deltaP_1)
-        deltaOm_j = C * array([(deltaP_2 + deltaP_jy), (-deltaP_jx), (-deltaP_1)])
+        deltaOm_ix = C_i * (deltaP_2 + deltaP_iy)
+        deltaOm_iy = C_i * (-deltaP_ix)
+        deltaOm_iz = C_i * (-deltaP_1)
+        deltaOm_j = C_j * array([(deltaP_2 + deltaP_jy), (-deltaP_jx), (-deltaP_1)])
         # update velocities:
         v_ix += deltaV_ix
         v_jx += deltaV_jx
@@ -178,13 +199,13 @@ def _collide_balls(
         w_jy += deltaOm_j[1]
         w_jz += deltaOm_j[2]
         # update ball-table slips:
-        u_iR_x, u_iR_y = v_ix + R * w_iy, v_iy - R * w_ix
-        u_jR_x, u_jR_y = v_jx + R * w_jy, v_jy - R * w_jx
+        u_iR_x, u_iR_y = v_ix + R1 * w_iy, v_iy - R1 * w_ix
+        u_jR_x, u_jR_y = v_jx + R2 * w_jy, v_jy - R2 * w_jx
         u_iR_xy_mag = sqrt(u_iR_x**2 + u_iR_y**2)
         u_jR_xy_mag = sqrt(u_jR_x**2 + u_jR_y**2)
         # update ball-ball slip:
-        u_ijC_x = v_ix - v_jx - R * (w_iz + w_jz)
-        u_ijC_z = R * (w_ix + w_jx)
+        u_ijC_x = v_ix - v_jx - R1 * w_iz - R2 * w_jz
+        u_ijC_z = R1 * w_ix + R2 * w_jx
         u_ijC_xz_mag = sqrt(u_ijC_x**2 + u_ijC_z**2)
         # increment work:
         v_ijy0 = v_ijy
@@ -262,7 +283,9 @@ class FrictionalMathavan(CoreBallBallCollision):
             ball1.state.rvw.copy(),
             ball2.state.rvw.copy(),
             ball1.params.R,
+            ball2.params.R,
             ball1.params.m,
+            ball2.params.m,
             u_s1=ball1.params.u_s,
             u_s2=ball2.params.u_s,
             # Assume the interaction coefficients are the average of the two balls

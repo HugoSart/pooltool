@@ -113,27 +113,8 @@ class System:
 
     @balls.validator  # type: ignore
     def _validate_balls(self, _, value) -> None:
-        first_ball_m = None
-        first_ball_R = None
-
         for key, ball in value.items():
             assert key == ball.id, f"Key {key} does not match ball's id {ball.id}"
-
-            # This safeguards against a current limitation in pooltool, namely, that
-            # balls must have equal masses and radii. Equal mass is due to the current
-            # ball-ball resolver, and equal radius is due to the current ball-ball
-            # resolver as well as the quartic solver used for ball-ball collision
-            # detection
-            if first_ball_m is None and first_ball_R is None:
-                first_ball_m = ball.params.m
-                first_ball_R = ball.params.R
-            else:
-                assert ball.params.m == first_ball_m, (
-                    f"Ball with id {ball.id} has a different mass"
-                )
-                assert ball.params.R == first_ball_R, (
-                    f"Ball with id {ball.id} has a different radius"
-                )
 
     def __attrs_post_init__(self):
         if self.cue.cue_ball_id not in self.balls:
@@ -354,10 +335,6 @@ class System:
             for ball2 in self.balls.values():
                 if ball1 is ball2:
                     continue
-
-                assert ball1.params.R == ball2.params.R, (
-                    "Balls are assumed to be equal radii"
-                )
 
                 if ptmath.is_overlapping(
                     ball1.state.rvw, ball2.state.rvw, ball1.params.R, ball2.params.R
