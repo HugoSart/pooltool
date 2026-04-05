@@ -417,6 +417,15 @@ def get_next_ball_ball_collision(
             ball2_params.R,
         ):
             cache[ball_pair] = shot.t
+        elif solve.skip_ball_ball_collision(
+            ball1_state.rvw,
+            ball2_state.rvw,
+            ball1_state.s,
+            ball2_state.s,
+            ball1_params.R,
+            ball2_params.R,
+        ):
+            cache[ball_pair] = np.inf
         else:
             dtau_E = solve.ball_ball_collision_time(
                 rvw1=ball1_state.rvw,
