@@ -197,7 +197,7 @@ def main() -> None:
         cue=pt.Cue(cue_ball_id="cue"),
     )
 
-    pt.simulate(system, inplace=True, max_events=args.max_events, continuous=True)
+    pt.simulate(system, inplace=True, max_events=2000, continuous=True)
 
     print("Blue target (54 mm):", summarize_pair(system, "cue", "2"))
     print("Red target (50 mm):", summarize_pair(system, "9", "3"))
