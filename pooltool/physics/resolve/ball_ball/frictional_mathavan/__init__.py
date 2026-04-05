@@ -122,7 +122,7 @@ def _collide_balls(
               coordinates.
     """
 
-    r_ij = r_j - r_i
+    r_ij = array([r_j[0] - r_i[0], r_j[1] - r_i[1], 0.0], dtype=np.float64)
     r_ij_mag_sqrd = dot(r_ij, r_ij)
     r_ij_mag = sqrt(r_ij_mag_sqrd)
     y_loc = r_ij / r_ij_mag

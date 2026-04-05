@@ -20,7 +20,7 @@ def _resolve_ball_ball(rvw1, rvw2, R1, R2, m1, m2, u_b, e_b):
     r1, v1, w1 = rvw1.copy()
     r2, v2, w2 = rvw2.copy()
 
-    n = ptmath.unit_vector(r2 - r1)
+    n = ptmath.unit_vector(np.array([r2[0] - r1[0], r2[1] - r1[1], 0.0]))
     rel_normal_speed = float(np.dot(v1 - v2, n))
 
     if rel_normal_speed <= const.EPS:
@@ -67,6 +67,8 @@ def _resolve_ball_ball(rvw1, rvw2, R1, R2, m1, m2, u_b, e_b):
     rvw1_f[2] = w1_f
     rvw2_f[1] = v2_f
     rvw2_f[2] = w2_f
+    rvw1_f[1][2] = 0.0
+    rvw2_f[1][2] = 0.0
 
     return rvw1_f, rvw2_f
 

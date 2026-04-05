@@ -27,6 +27,11 @@ class BallBallCollisionStrategy(_BaseStrategy, Protocol):
 class CoreBallBallCollision(ABC):
     """Operations used by every ball-ball collision resolver"""
 
+    @staticmethod
+    def _planar_delta(r1: np.ndarray, r2: np.ndarray) -> np.ndarray:
+        delta = r2 - r1
+        return np.array([delta[0], delta[1], 0.0], dtype=np.float64)
+
     def _apply_fallback_positioning(
         self,
         ball1: Ball,
@@ -41,9 +46,13 @@ class CoreBallBallCollision(ABC):
         they're separated by the target distance (R1 + R2 + spacer).
         """
         target_separation = ball1.params.R + ball2.params.R + spacer
-        correction = target_separation - ptmath.norm3d(r2 - r1)
-        r1_corrected = r1 - correction / 2 * ptmath.unit_vector(r2 - r1)
-        r2_corrected = r2 + correction / 2 * ptmath.unit_vector(r2 - r1)
+        planar_delta = self._planar_delta(r1, r2)
+        correction = target_separation - ptmath.norm3d(planar_delta)
+        line_of_centers = ptmath.unit_vector(planar_delta)
+        r1_corrected = r1.copy()
+        r2_corrected = r2.copy()
+        r1_corrected[:2] -= correction / 2 * line_of_centers[:2]
+        r2_corrected[:2] += correction / 2 * line_of_centers[:2]
         return r1_corrected, r2_corrected
 
     def make_kiss(self, ball1: Ball, ball2: Ball) -> tuple[Ball, Ball]:
@@ -93,16 +102,13 @@ class CoreBallBallCollision(ABC):
         else:
             Bx = v2[0] - v1[0]
             By = v2[1] - v1[1]
-            Bz = v2[2] - v1[2]
             Cx = r2[0] - r1[0]
             Cy = r2[1] - r1[1]
-            Cz = r2[2] - r1[2]
-            alpha = Bx * Bx + By * By + Bz * Bz
-            beta = 2 * Bx * Cx + 2 * By * Cy + 2 * Bz * Cz
+            alpha = Bx * Bx + By * By
+            beta = 2 * Bx * Cx + 2 * By * Cy
             gamma = (
                 Cx * Cx
                 + Cy * Cy
-                + Cz * Cz
                 - (ball1.params.R + ball2.params.R + spacer)
                 * (ball1.params.R + ball2.params.R + spacer)
             )
@@ -119,8 +125,10 @@ class CoreBallBallCollision(ABC):
             else:
                 t = roots[np.abs(roots).argmin()]
 
-                r1_corrected = r1 + t * v1
-                r2_corrected = r2 + t * v2
+                r1_corrected = r1.copy()
+                r2_corrected = r2.copy()
+                r1_corrected[:2] += t * v1[:2]
+                r2_corrected[:2] += t * v2[:2]
 
                 midpoint = (r1 + r2) / 2
                 midpoint_corrected = (r1_corrected + r2_corrected) / 2
@@ -192,7 +200,7 @@ class CoreBallBallCollision(ABC):
         theft_fraction = 0.10
         velocity_similarity_threshold = 0.9
 
-        line_of_centers = ptmath.unit_vector(r2 - r1)
+        line_of_centers = ptmath.unit_vector(self._planar_delta(r1, r2))
 
         # Velocities projected onto the line of centers (loc).
         v1_loc = np.dot(v1, line_of_centers)

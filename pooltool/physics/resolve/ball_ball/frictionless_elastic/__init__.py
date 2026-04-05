@@ -12,7 +12,7 @@ def _resolve_ball_ball(rvw1, rvw2, m1, m2):
     r1, r2 = rvw1[0], rvw2[0]
     v1, v2 = rvw1[1], rvw2[1]
 
-    n = ptmath.unit_vector(r2 - r1)
+    n = ptmath.unit_vector(np.array([r2[0] - r1[0], r2[1] - r1[1], 0.0]))
     rel_normal_speed = float(np.dot(v1 - v2, n))
 
     if rel_normal_speed <= 0:
@@ -21,6 +21,8 @@ def _resolve_ball_ball(rvw1, rvw2, m1, m2):
     impulse = 2.0 * rel_normal_speed / (1.0 / m1 + 1.0 / m2)
     rvw1[1] = v1 - impulse / m1 * n
     rvw2[1] = v2 + impulse / m2 * n
+    rvw1[1][2] = 0.0
+    rvw2[1][2] = 0.0
 
     return rvw1, rvw2
 
