@@ -282,7 +282,10 @@ def is_room_for_cue_ball(
         if ball.id == _ball.id:
             continue
 
-        if norm2d(_ball.xyz[:2] - shadow_ball_coords) < cue_ball_radius + _ball.params.R:
+        if (
+            norm2d(_ball.xyz[:2] - shadow_ball_coords)
+            < cue_ball_radius + _ball.params.R
+        ):
             return False
 
     return True

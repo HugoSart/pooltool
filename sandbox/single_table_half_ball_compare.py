@@ -1,8 +1,8 @@
 import argparse
 import math
 
-import numpy as np
 import attrs
+import numpy as np
 
 import pooltool as pt
 from pooltool.events import EventType

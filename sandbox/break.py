@@ -148,5 +148,6 @@ if __name__ == "__main__":
     )
 
     args = ap.parse_args()
+    args.seed = 1
 
     main(args)

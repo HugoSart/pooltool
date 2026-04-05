@@ -46,12 +46,7 @@ def _resolve_ball_ball(rvw1, rvw2, R1, R2, m1, m2, u_b, e_b):
     v_rel_t_mag = ptmath.norm3d(v_rel_t)
     if v_rel_t_mag > const.EPS:
         t_hat = v_rel_t / v_rel_t_mag
-        tangential_mass = (
-            inv_m1
-            + inv_m2
-            + (R1 * R1) / I1
-            + (R2 * R2) / I2
-        )
+        tangential_mass = inv_m1 + inv_m2 + (R1 * R1) / I1 + (R2 * R2) / I2
         j_t_no_slip = v_rel_t_mag / tangential_mass
         j_t = min(u_b * j_n, j_t_no_slip)
         impulse += j_t * t_hat
